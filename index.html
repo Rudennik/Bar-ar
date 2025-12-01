@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>БАРМЕН: Начало - MindAR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+      
+      /* Основной оверлей */
+      #overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 999;
+        display: flex; justify-content: center; align-items: center;
+        flex-direction: column; color: white; text-align: center;
+      }
+      
+      /* Скрываем кнопку пока AR не загрузится */
+      #start-button {
+        padding: 15px 30px; font-size: 18px; background: #e4405f;
+        color: white; border: none; border-radius: 30px; cursor: pointer; 
+        margin-top: 20px; font-weight: bold; display: none; /* Скрыто по умолчанию */
+        box-shadow: 0 4px 15px rgba(228, 64, 95, 0.4);
+      }
+
+      #status-text {
+        font-size: 18px; margin-bottom: 10px; line-height: 1.5;
+        padding: 0 20px;
+      }
+
+      /* Рамка сканирования (появляется после старта) */
+      #scanning-overlay {
+        display: none; position: absolute; top: 0; left: 0; 
+        width: 100%; height: 100%; z-index: 998; pointer-events: none;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M10,10 L30,10 M10,10 L10,30 M90,10 L70,10 M90,10 L90,30 M10,90 L30,90 M10,90 L10,70 M90,90 L70,90 M90,90 L90,70" stroke="white" stroke-width="2" fill="none"/></svg>') no-repeat center center;
+        opacity: 0.5;
+      }
+      
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  
+  <body>
+    
+    <div id="overlay">
+        <div id="status-text">Загрузка дополненной реальности...</div>
+        <button id="start-button">НАЧАТЬ</button>
+    </div>
+
+    <div id="scanning-overlay"></div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc: ./calendar.mind; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+        <video id="vid" src="./barmen.mp4" 
+               preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous">
+        </video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
+        <a-video 
+          src="#vid" 
+          width="1"
+          height="1" 
+          position="0 0 0.005"
+          rotation="0 0 0"
+          visible="false" 
+          id="video-plane"
+        ></a-video>
+      </a-entity>
+
+    </a-scene>
+
+    <script>
+      const overlay = document.getElementById('overlay');
+      const startButton = document.getElementById('start-button');
+      const statusText = document.getElementById('status-text');
+      const scanningOverlay = document.getElementById('scanning-overlay');
+      const video = document.getElementById('vid');
+      const videoPlane = document.getElementById('video-plane');
+      const target = document.getElementById('target-entity');
+      const scene = document.querySelector('a-scene');
+
+      // 1. Событие: AR система готова (нейросеть загружена)
+      scene.addEventListener("arReady", (event) => {
+        statusText.innerText = "Наведите камеру на календарик";
+        startButton.style.display = "block"; // Показываем кнопку только сейчас
+      });
+
+      // 2. Событие: Ошибка загрузки (например, нет камеры)
+      scene.addEventListener("arError", (event) => {
+        statusText.innerText = "Ошибка доступа к камере или загрузки.";
+      });
+
+      // 3. Логика кнопки "Старт"
+      startButton.addEventListener('click', () => {
+        overlay.classList.add('hidden');       // Скрываем экран приветствия
+        scanningOverlay.style.display = "block"; // Показываем рамку сканирования
+        
+        // Разблокировка аудио для iOS/Android
+        video.play();
+        video.pause();
+        video.currentTime = 0;
+      });
+
+      // 4. Когда картинка найдена
+      target.addEventListener("targetFound", event => {
+        console.log("Календарь найден!");
+        scanningOverlay.classList.add('hidden'); // Убираем рамку сканирования
+        
+        videoPlane.setAttribute("visible", true); // Делаем видео видимым
+        video.play();
+      });
+
+      // 5. Когда картинка потеряна
+      target.addEventListener("targetLost", event => {
+        console.log("Календарь потерян!");
+        // Опционально: можно вернуть рамку сканирования
+        scanningOverlay.classList.remove('hidden'); 
+        
+        video.pause();
+        // Опционально: скрыть видео, чтобы оно не "висело" в воздухе при сбое трекинга
+        // videoPlane.setAttribute("visible", false); 
+      });
+    </script>
+  </body>
+</html>
