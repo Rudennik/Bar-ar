@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>БАРМЕН: Начало - AR-проект</title>
+    
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <style>
+      /* Стиль для начального экрана-подсказки */
+      #ar-hint {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 18px;
+        z-index: 9999;
+        cursor: pointer;
+        padding: 20px;
+        line-height: 1.5;
+        font-family: Arial, sans-serif;
+      }
+      #ar-hint p {
+          max-width: 80%;
+      }
+    </style>
+
+  </head>
+  
+  <body style="margin : 0px; overflow: hidden;">
+
+    <video 
+      id="barmenVideo" 
+      src="barmen.mp4" 
+      loop 
+      playsinline 
+      preload="auto" 
+      crossorigin="anonymous" 
+      style="display:none;"
+    ></video>
+
+    <div id="ar-hint">
+        <p>
+            Нажмите в любом месте экрана, чтобы включить камеру и звук.<br>
+            Затем наведите камеру на постер "БАРМЕН: Начало".
+        </p>
+    </div>
+
+    <a-scene 
+      embedded 
+      arjs="sourceType: webcam; detectionMode: mono_and_matrix; cameraParametersUrl: https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/camera-parameters.zip;"
+      vr-mode-ui="enabled: false"
+      renderer="logarithmicDepthBuffer: true; precision: medium;"
+      
+      debug: false; /* Выключите debug для чистого вида */
+      id="arScene"
+    >
+
+      <a-marker type='pattern' url='barmen.patt'>
+        
+        <a-video 
+          id="video-plane"
+          src="#barmenVideo" 
+          width="1" 
+          height="1.48" /* Установлен размер, близкий к пропорциям постера */
+          position="0 0.74 0.05" /* Поднят, чтобы быть в центре постера */
+          rotation="-90 0 0" /* Повернут вертикально */
+          loop
+          playsinline
+          visible="false" /* Сначала невидимо */
+        ></a-video>
+        
+      </a-marker>
+
+      <a-entity camera></a-entity>
+
+    </a-scene>
+
+    <script>
+        const arHint = document.getElementById('ar-hint');
+        const videoElement = document.getElementById('barmenVideo');
+        const videoPlane = document.getElementById('video-plane');
+        const arScene = document.getElementById('arScene');
+        
+        // Функция, которая запускается при первом касании
+        function startAR() {
+            // 1. Убираем подсказку и разрешаем медиа
+            arHint.style.display = 'none';
+            
+            // 2. Активируем камеру
+            arScene.components.arjs.pause();
+            arScene.components.arjs.play();
+            
+            // 3. Добавляем обработчик, который запустит видео, когда увидит маркер
+            videoPlane.parentElement.addEventListener('markerFound', function() {
+                // Делаем видео видимым
+                videoPlane.setAttribute('visible', 'true'); 
+                // Запускаем видео со звуком
+                videoElement.play().catch(e => console.log("Video play failed:", e));
+            });
+
+            // 4. Добавляем обработчик, чтобы остановить видео, когда маркер исчезнет
+            videoPlane.parentElement.addEventListener('markerLost', function() {
+                videoElement.pause();
+                videoPlane.setAttribute('visible', 'false');
+            });
+            
+            // Удаляем обработчик, чтобы не запускать AR повторно
+            document.removeEventListener('touchstart', startAR);
+            document.removeEventListener('click', startAR);
+        }
+
+        // Ждем первого касания или клика пользователя
+        document.addEventListener('touchstart', startAR, {once: true});
+        document.addEventListener('click', startAR, {once: true});
+    </script>
+  </body>
+</html>
