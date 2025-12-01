@@ -53,16 +53,16 @@
         </p>
     </div>
 
-    <a-scene 
+   <a-scene 
       embedded 
-      arjs="sourceType: webcam; detectionMode: mono_and_matrix; cameraParametersUrl: https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/camera-parameters.zip;"
+      /* ИЗМЕНЕНИЕ: Указываем режим распознавания только для паттернов */
+      arjs="sourceType: webcam; detectionMode: mono; patternRatio: 0.9; cameraParametersUrl: https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/camera-parameters.zip;"
       vr-mode-ui="enabled: false"
       renderer="logarithmicDepthBuffer: true; precision: medium;"
       
-      debug: true; /* Выключите debug для чистого вида */
+      debug: true; 
       id="arScene"
     >
-
       <a-marker type='pattern' url='barmen.patt'>
         
         <a-video 
