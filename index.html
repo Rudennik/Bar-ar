@@ -32,11 +32,15 @@
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./calendar.mind; uiScanning: no;" 
+      mindar-image="imageTargetSrc: ./calendar.mind; 
+                   uiScanning: no; 
+                   filterMinCF: 0.0001; /* Минимальная уверенность - для стабильности */
+                   filterBeta: 0.001;" /* Сглаживание движения - для плавности */
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
-      device-orientation-permission-ui="enabled: false">
+      device-orientation-permission-ui="enabled: false"
+>
 
       <a-assets>
         <video id="vid" src="./barmen.mp4" loop playsinline crossorigin="anonymous"></video>
@@ -48,8 +52,8 @@
         
         <a-video 
           src="#vid" 
-          position="0 0 0.003" 
-          height="1" width="1.5" 
+          position="0 0 0" 
+          height="1" width="1" 
           rotation="0 0 0"
           id="video-plane"
         ></a-video>
