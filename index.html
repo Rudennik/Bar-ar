@@ -1,125 +1,87 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>БАРМЕН: Начало - AR-проект</title>
+    <title>БАРМЕН: Начало - MindAR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      /* Стиль для начального экрана-подсказки */
-      #ar-hint {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.85);
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        font-size: 18px;
-        z-index: 9999;
-        cursor: pointer;
-        padding: 20px;
-        line-height: 1.5;
-        font-family: Arial, sans-serif;
+      body { margin: 0; overflow: hidden; }
+      
+      /* Экран "Нажмите старт" */
+      #start-screen {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 999;
+        display: flex; justify-content: center; align-items: center;
+        flex-direction: column; color: white; font-family: sans-serif;
       }
-      #ar-hint p {
-          max-width: 80%;
+      #start-button {
+        padding: 15px 30px; font-size: 20px; background: #e4405f;
+        color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;
       }
     </style>
-
   </head>
   
-  <body style="margin : 0px; overflow: hidden;">
-
-    <video 
-      id="barmenVideo" 
-      src="barmen.mp4" 
-      loop 
-      playsinline 
-      preload="auto" 
-      crossorigin="anonymous" 
-      style="display:none;"
-    ></video>
-
-    <div id="ar-hint">
-        <p>
-            Нажмите в любом месте экрана, чтобы включить камеру и звук.<br>
-            Затем наведите камеру на постер "БАРМЕН: Начало".
-        </p>
+  <body>
+    
+    <div id="start-screen">
+        <div>Наведите камеру на календарик</div>
+        <button id="start-button">НАЧАТЬ</button>
     </div>
 
-   <a-scene 
-      embedded 
-      /* ИЗМЕНЕНИЕ: Указываем режим распознавания только для паттернов */
-      arjs="sourceType: webcam; detectionMode: mono; patternRatio: 0.9; cameraParametersUrl: https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/camera-parameters.zip;"
-      vr-mode-ui="enabled: false"
-      renderer="logarithmicDepthBuffer: true; precision: medium;"
-      
-      debug: true; 
-      id="arScene"
-    >
-      <a-marker type='mind' url='calendar.mind'>
+    <a-scene 
+      mindar-image="imageTargetSrc: ./calendar.mind; uiScanning: no;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+        <video id="vid" src="./barmen.mp4" loop playsinline crossorigin="anonymous"></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
         
         <a-video 
+          src="#vid" 
+          position="0 0 0" 
+          height="1" width="1" 
+          rotation="0 0 0"
           id="video-plane"
-          src="#barmenVideo" 
-          width="1" 
-          height="1.48" /* Установлен размер, близкий к пропорциям постера */
-          position="0 0.74 0.05" /* Поднят, чтобы быть в центре постера */
-          rotation="-90 0 0" /* Повернут вертикально */
-          loop
-          playsinline
-          visible="false" /* Сначала невидимо */
         ></a-video>
         
-      </a-marker>
-
-      <a-entity camera></a-entity>
-
+      </a-entity>
     </a-scene>
 
     <script>
-        const arHint = document.getElementById('ar-hint');
-        const videoElement = document.getElementById('barmenVideo');
-        const videoPlane = document.getElementById('video-plane');
-        const arScene = document.getElementById('arScene');
-        
-        // Функция, которая запускается при первом касании
-        function startAR() {
-            // 1. Убираем подсказку и разрешаем медиа
-            arHint.style.display = 'none';
-            
-            // 2. Активируем камеру
-            arScene.components.arjs.pause();
-            arScene.components.arjs.play();
-            
-            // 3. Добавляем обработчик, который запустит видео, когда увидит маркер
-            videoPlane.parentElement.addEventListener('markerFound', function() {
-                // Делаем видео видимым
-                videoPlane.setAttribute('visible', 'true'); 
-                // Запускаем видео со звуком
-                videoElement.play().catch(e => console.log("Video play failed:", e));
-            });
+      const startScreen = document.getElementById('start-screen');
+      const startButton = document.getElementById('start-button');
+      const video = document.getElementById('vid');
+      const target = document.getElementById('target-entity');
 
-            // 4. Добавляем обработчик, чтобы остановить видео, когда маркер исчезнет
-            videoPlane.parentElement.addEventListener('markerLost', function() {
-                videoElement.pause();
-                videoPlane.setAttribute('visible', 'false');
-            });
-            
-            // Удаляем обработчик, чтобы не запускать AR повторно
-            document.removeEventListener('touchstart', startAR);
-            document.removeEventListener('click', startAR);
-        }
+      // Логика кнопки "Старт"
+      startButton.addEventListener('click', () => {
+        startScreen.style.display = 'none';
+        // Пытаемся запустить видео и сразу ставим на паузу (чтобы разблокировать звук)
+        video.play();
+        video.pause();
+      });
 
-        // Ждем первого касания или клика пользователя
-        document.addEventListener('touchstart', startAR, {once: true});
-        document.addEventListener('click', startAR, {once: true});
+      // Когда картинка найдена
+      target.addEventListener("targetFound", event => {
+        console.log("Календарь найден!");
+        video.play();
+      });
+
+      // Когда картинка потеряна
+      target.addEventListener("targetLost", event => {
+        console.log("Календарь потерян!");
+        video.pause();
+      });
     </script>
   </body>
 </html>
